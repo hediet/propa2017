@@ -1,0 +1,89 @@
+// var: varName
+// app: term1 term2
+// abs: \varName . term
+
+// a b c -> ((a) b) c
+
+// https://hediet.github.io/LambdaCalculus2/dist/
+// ((\t. \f. f) ((\y. (\x. x x) (\x. x x)) ((\x. x) (\x. x))) (\t. \f. f));
+// \y. (\z. (\x. x) (\x. x) z) y
+
+// https://srtobi.github.io/lambda/docs/
+
+
+true = \t . \f . t
+false = \t . \f . f
+
+pair = \a . \b . (\f . f a b)
+fst = \p . p true
+snd = \p . p false
+
+// fst (pair a b) = (\p . p (\t . \f . t)) ((\a . \b . (\f . f a b)) a b) -> a
+
+if cond then else = cond then else
+and a b = if a b false
+or a b = if a true b
+not a = if a false true
+
+
+n0 = \s . \z . z
+n1 = \s . \z . s z
+n2 = \s . \z . s (s z)
+
+succ n = \s . \z . s (n s z)
+n3 = succ n2
+n4 = succ n3
+n5 = succ n4
+n6 = succ n5
+n7 = succ n6
+n8 = succ n7
+n9 = succ n8
+n10 = succ n9
+
+isZero n = n (\z -> false) true
+
+// \s.\z. s (s z) `add` \s.\z. s (s (s z))
+// = \s.\z. s (s (s (s (s z))))
+
+add n m = \s z -> n s (m s z)
+mul n m = \s z -> n (m s) z
+
+// Achtung: Kompliziert, muss man nicht unbedingt verstehen
+exp n m = \s z -> m n s z
+
+// _pred_next pair a b -> pair b (succ b)
+_pred_next p = p (\fst snd -> pair snd (succ snd))
+pred n = (fst ((n _pred_next) (pair n0 n0)))
+sub a b = b pred a
+
+// Achtung: Sehr kompliziert. linSub ist wesentlich schneller als sub.
+buildAdder a = a (\adder -> (\a -> pair (succ a) adder)) error
+buildAdderThatSkips b a = b (\delayedAdder -> (\a -> pair n0 delayedAdder)) (buildAdder a)
+adderCaller p = p (\fst snd -> snd fst)
+linSub a b = fst (a adderCaller (pair n0 (buildAdderThatSkips b a)))
+
+equals n m = and (isZero (linSub n m)) (isZero (linSub m n))
+
+// equals (add n3 n4) n8
+
+
+
+list0 = \f n -> n
+list1 e1 = \f n -> f e1 n
+list2 e1 e2 = \f n -> f e1 (f e2 n)
+list3 e1 e2 e3 = \f n -> f e1 (f e2 (f e3 n))
+
+end = \f n -> n
+cons elem list = \f n -> f elem (list f n)
+foldr f n list = list f n
+
+tail list = snd (
+        foldr
+            (\elem acc -> acc (\last beforeLast -> pair (cons elem last) last))
+            (pair end error)
+            list
+    )
+
+head list = foldr (\elem acc -> elem) error list
+
+exampleList = (cons a (cons b (cons c (cons d end))))
